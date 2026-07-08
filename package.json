@@ -1,0 +1,16 @@
+{
+  "name": "elite-tournament-store",
+  "version": "1.0.0",
+  "description": "Elite Tournament Official Premium Store",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "echo 'No build required'",
+    "lint": "echo 'No lint required'",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.22.2"
+  }
+}
