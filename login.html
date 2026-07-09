@@ -1,0 +1,84 @@
+// admin/auth.js
+
+let supabase = null;
+
+// Ritorna l'istanza del client di Supabase prelevando la config in modo asincrono
+async function getSupabase() {
+    if (supabase) return supabase;
+    
+    try {
+        const res = await fetch('/api/config');
+        if (!res.ok) throw new Error("Errore durante il recupero della configurazione.");
+        const config = await res.json();
+        
+        if (!config.supabaseUrl || !config.supabaseAnonKey) {
+            throw new Error("Supabase non configurato. Assicurati che SUPABASE_URL e SUPABASE_ANON_KEY siano nel file .env.");
+        }
+        
+        supabase = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+        return supabase;
+    } catch (err) {
+        console.error("Errore di inizializzazione Supabase Auth:", err);
+        throw err;
+    }
+}
+
+// Controlla se l'utente è loggato. Se non lo è, effettua il redirect a login.html
+async function checkAuth() {
+    try {
+        const client = await getSupabase();
+        const { data: { session }, error } = await client.auth.getSession();
+        
+        if (error || !session) {
+            // Se non siamo già nella pagina di login, facciamo il redirect
+            if (!window.location.pathname.includes('login.html')) {
+                window.location.href = '/admin/login.html';
+            }
+            return null;
+        }
+        
+        // Se siamo nella pagina di login e abbiamo una sessione, facciamo il redirect a index.html
+        if (window.location.pathname.includes('login.html')) {
+            window.location.href = '/admin/index.html';
+        }
+        
+        return session.user;
+    } catch (err) {
+        console.error("Errore di verifica autenticazione:", err);
+        if (!window.location.pathname.includes('login.html')) {
+            window.location.href = '/admin/login.html';
+        }
+        return null;
+    }
+}
+
+// Effettua il login dell'utente
+async function signIn(email, password) {
+    const client = await getSupabase();
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    return data;
+}
+
+// Registra un nuovo utente
+async function signUp(email, password) {
+    const client = await getSupabase();
+    const { data, error } = await client.auth.signUp({ email, password });
+    if (error) throw error;
+    return data;
+}
+
+// Effettua il logout dell'utente
+async function logout() {
+    const client = await getSupabase();
+    const { error } = await client.auth.signOut();
+    if (error) throw error;
+    window.location.href = '/admin/login.html';
+}
+
+// Espone le funzioni a livello globale
+window.getSupabaseClient = getSupabase;
+window.checkAuth = checkAuth;
+window.signIn = signIn;
+window.signUp = signUp;
+window.logout = logout;
